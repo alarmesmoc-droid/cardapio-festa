@@ -10,9 +10,9 @@
     th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
     th { background: #eee; }
     .total { margin-top: 20px; font-size: 18px; font-weight: bold; }
-    .pix { margin-top: 20px; }
-    #qrcode { margin-top: 10px; }
-    button { padding: 10px 20px; margin-top: 10px; }
+    .pix { margin-top: 20px; text-align: center; }
+    #qrcode { margin-top: 10px; display: inline-block; }
+    button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -54,7 +54,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
   <script>
-    // 🔹 Gera Pix Copia e Cola no padrão do BACEN
+    // 🔹 Gera Pix Copia e Cola no padrão BACEN
     function gerarPayloadPix(chave, nome, cidade, valor) {
       function formatValue(id, value) {
         let size = value.length.toString().padStart(2, "0");
@@ -63,25 +63,23 @@
 
       let payload = "";
       payload += formatValue("00", "01"); // Payload Format Indicator
-      payload += formatValue("01", "11"); // Point of Initiation Method (dinâmico)
+      payload += formatValue("01", "12"); // Point of Initiation Method (dinâmico)
 
-      // Merchant Account Information (Banco Central do Brasil - "br.gov.bcb.pix")
+      // Merchant Account Information (Banco Central - br.gov.bcb.pix)
       let gui = formatValue("00", "br.gov.bcb.pix");
       let chavePix = formatValue("01", chave);
       let merchantAccount = formatValue("26", gui + chavePix);
-
       payload += merchantAccount;
 
       payload += formatValue("52", "0000"); // Merchant Category Code
       payload += formatValue("53", "986"); // Moeda - BRL
       payload += formatValue("54", valor.toString()); // Valor
       payload += formatValue("58", "BR"); // País
-      payload += formatValue("59", nome); // Nome recebedor
-      payload += formatValue("60", cidade); // Cidade recebedor
+      payload += formatValue("59", nome); // Nome do recebedor
+      payload += formatValue("60", cidade); // Cidade do recebedor
+      payload += formatValue("62", formatValue("05", "PEDIDO1")); // Identificador do pedido
 
-      payload += formatValue("62", formatValue("05", "FESTA01")); // Identificador do pedido
-
-      payload += "6304"; // CRC (vamos calcular abaixo)
+      payload += "6304"; // CRC placeholder
 
       // Função CRC16
       function crc16(str) {
@@ -98,7 +96,6 @@
       }
 
       payload += crc16(payload);
-
       return payload;
     }
 
@@ -107,7 +104,7 @@
       document.querySelectorAll("table tr").forEach((linha, index) => {
         if(index === 0) return;
         let preco = parseFloat(linha.cells[1].innerText);
-        let qtd = linha.cells[2].querySelector("input").value;
+        let qtd = parseFloat(linha.cells[2].querySelector("input").value);
         total += preco * qtd;
       });
       document.getElementById("total").innerText = total.toFixed(2);
@@ -120,12 +117,11 @@
         return;
       }
 
-      let chave = "03980793664";
-      let nome = "Ávilo Fonseca";
-      let cidade = "Montes Claros";
+      const chave = "03980793664"; // Sua chave CPF
+      const nome = "Ávilo Fonseca";
+      const cidade = "Montes Claros";
 
-      let payload = gerarPayloadPix(chave, nome, cidade, total.toFixed(2));
-
+      const payload = gerarPayloadPix(chave, nome, cidade, total.toFixed(2));
       document.getElementById("pix-code").innerText = payload;
 
       // Gera o QR Code oficial
