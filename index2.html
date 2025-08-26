@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cardápio Online</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f8f8; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+    th { background: #eee; }
+    .total { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    .pix { margin-top: 20px; text-align: center; }
+    #qrcode { margin-top: 10px; display: inline-block; }
+    button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>🍔 Cardápio Online</h1>
+
+  <table>
+    <tr>
+      <th>Produto</th>
+      <th>Preço (R$)</th>
+      <th>Quantidade</th>
+    </tr>
+    <tr>
+      <td>X-Burger</td>
+      <td>12.00</td>
+      <td><input type="number" min="0" value="0" onchange="calcularTotal()"></td>
+    </tr>
+    <tr>
+      <td>Pizza Fatia</td>
+      <td>8.00</td>
+      <td><input type="number" min="0" value="0" onchange="calcularTotal()"></td>
+    </tr>
+    <tr>
+      <td>Refrigerante</td>
+      <td>5.00</td>
+      <td><input type="number" min="0" value="0" onchange="calcularTotal()"></td>
+    </tr>
+  </table>
+
+  <div class="total">Total: R$ <span id="total">0.00</span></div>
+
+  <div class="pix">
+    <button onclick="gerarPix()">Gerar PIX para Pagamento</button>
+    <p id="pix-code"></p>
+    <div id="qrcode"></div>
+  </div>
+
+  <!-- Biblioteca para QR Code -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+  <script>
+    // 🔹 Gera Pix Copia e Cola no padrão BACEN
+    function gerarPayloadPix(chave, nome, cidade, valor) {
+      function formatValue(id, value) {
+        let size = value.length.toString().padStart(2, "0");
+        return id + size + value;
+      }
+
+      let payload = "";
+      payload += formatValue("00", "01"); // Payload Format Indicator
+      payload += formatValue("01", "12"); // Point of Initiation Method (dinâmico)
+
+      // Merchant Account Information (Banco Central - br.gov.bcb.pix)
+      let gui = formatValue("00", "br.gov.bcb.pix");
+      let chavePix = formatValue("01", chave);
+      let merchantAccount = formatValue("26", gui + chavePix);
+      payload += merchantAccount;
+
+      payload += formatValue("52", "0000"); // Merchant Category Code
+      payload += formatValue("53", "986"); // Moeda - BRL
+      payload += formatValue("54", valor.toString()); // Valor
+      payload += formatValue("58", "BR"); // País
+      payload += formatValue("59", nome); // Nome do recebedor
+      payload += formatValue("60", cidade); // Cidade do recebedor
+      payload += formatValue("62", formatValue("05", "PEDIDO1")); // Identificador do pedido
+
+      payload += "6304"; // CRC placeholder
+
+      // Função CRC16
+      function crc16(str) {
+        let crc = 0xFFFF;
+        for (let i = 0; i < str.length; i++) {
+          crc ^= str.charCodeAt(i) << 8;
+          for (let j = 0; j < 8; j++) {
+            if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021;
+            else crc <<= 1;
+          }
+          crc &= 0xFFFF;
+        }
+        return crc.toString(16).toUpperCase().padStart(4, "0");
+      }
+
+      payload += crc16(payload);
+      return payload;
+    }
+
+    function calcularTotal() {
+      let total = 0;
+      document.querySelectorAll("table tr").forEach((linha, index) => {
+        if(index === 0) return;
+        let preco = parseFloat(linha.cells[1].innerText);
+        let qtd = parseFloat(linha.cells[2].querySelector("input").value);
+        total += preco * qtd;
+      });
+      document.getElementById("total").innerText = total.toFixed(2);
+    }
+
+    function gerarPix() {
+      let total = parseFloat(document.getElementById("total").innerText);
+      if(total <= 0) {
+        alert("Adicione algum item ao pedido!");
+        return;
+      }
+
+      const chave = "03980793664"; // Sua chave CPF
+      const nome = "Ávilo Fonseca";
+      const cidade = "Montes Claros";
+
+      const payload = gerarPayloadPix(chave, nome, cidade, total.toFixed(2));
+      document.getElementById("pix-code").innerText = payload;
+
+      // Gera o QR Code oficial
+      document.getElementById("qrcode").innerHTML = "";
+      QRCode.toCanvas(document.createElement('canvas'), payload, function (err, canvas) {
+        if (!err) document.getElementById("qrcode").appendChild(canvas);
+      });
+    }
+  </script>
+
+</body>
+</html>
