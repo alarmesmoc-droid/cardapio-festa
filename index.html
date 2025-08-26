@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cardápio - Festa da Igreja</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; }
+    h1 { text-align: center; }
+    .item { border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin: 10px 0; }
+    .total { font-size: 1.2em; font-weight: bold; margin-top: 20px; }
+    button { padding: 10px; margin-top: 10px; width: 100%; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>🍽️ Cardápio da Festa</h1>
+
+  <div class="item">
+    <p>Pastel - R$ 8,00</p>
+    <input type="number" id="pastel" value="0" min="0">
+  </div>
+
+  <div class="item">
+    <p>Refrigerante - R$ 5,00</p>
+    <input type="number" id="refri" value="0" min="0">
+  </div>
+
+  <div class="total">
+    Total: R$ <span id="total">0</span>
+  </div>
+
+  <button onclick="gerarPix()">Gerar PIX e QR Code</button>
+
+  <div id="qrcode"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script>
+    function gerarPix() {
+      let pastel = parseInt(document.getElementById("pastel").value) || 0;
+      let refri = parseInt(document.getElementById("refri").value) || 0;
+
+      let total = (pastel * 8) + (refri * 5);
+      document.getElementById("total").innerText = total;
+
+      if (total <= 0) {
+        alert("Escolha pelo menos 1 produto.");
+        return;
+      }
+
+      // 🔹 Gera o texto PIX Copia e Cola (simples)
+      let chave = "03980793664"; // sua chave PIX
+      let nome = "Ávilo Fonseca";
+      let cidade = "Montes Claros";
+      let pix = `00020126360014BR.GOV.BCB.PIX0111${chave}520400005303986540${total.toFixed(2)}5802BR5913${nome}600${cidade}62070503***6304`;
+
+      // Limpa e gera o QR Code
+      document.getElementById("qrcode").innerHTML = "";
+      let qr = new QRious({
+        element: document.createElement("canvas"),
+        value: pix,
+        size: 200
+      });
+      document.getElementById("qrcode").appendChild(qr.element);
+    }
+  </script>
+</body>
+</html>
