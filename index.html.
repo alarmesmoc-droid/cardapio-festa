@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cardápio Online</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f8f8; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+    th { background: #eee; }
+    .total { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    .pix { margin-top: 20px; }
+    #qrcode { margin-top: 10px; }
+    button { padding: 10px 20px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>🍔 Cardápio Online</h1>
+
+  <table>
+    <tr>
+      <th>Produto</th>
+      <th>Preço (R$)</th>
+      <th>Quantidade</th>
+    </tr>
+    <tr>
+      <td>X-Burger</td>
+      <td>12.00</td>
+      <td><input type="number" min="0" value="0" onchange="calcularTotal()"></td>
+    </tr>
+    <tr>
+      <td>Pizza Fatia</td>
+      <td>8.00</td>
+      <td><input type="number" min="0" value="0" onchange="calcularTotal()"></td>
+    </tr>
+    <tr>
+      <td>Refrigerante</td>
+      <td>5.00</td>
+      <td><input type="number" min="0" value="0" onchange="calcularTotal()"></td>
+    </tr>
+  </table>
+
+  <div class="total">Total: R$ <span id="total">0.00</span></div>
+
+  <div class="pix">
+    <button onclick="gerarPix()">Gerar PIX para Pagamento</button>
+    <p id="pix-code"></p>
+    <div id="qrcode"></div>
+  </div>
+
+  <!-- Biblioteca para QR Code -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+  <script>
+    function calcularTotal() {
+      let total = 0;
+      document.querySelectorAll("table tr").forEach((linha, index) => {
+        if(index === 0) return;
+        let preco = parseFloat(linha.cells[1].innerText);
+        let qtd = linha.cells[2].querySelector("input").value;
+        total += preco * qtd;
+      });
+      document.getElementById("total").innerText = total.toFixed(2);
+    }
+
+    function gerarPix() {
+      let total = document.getElementById("total").innerText;
+      if(total <= 0) {
+        alert("Adicione algum item ao pedido!");
+        return;
+      }
+
+      let chave = "03980793664";
+      let nome = "Ávilo Fonseca";
+      let cidade = "Montes Claros";
+      let valor = total;
+      
+      // PIX copia e cola simples
+      let pixCode = `Chave PIX: ${chave}\nNome: ${nome}\nCidade: ${cidade}\nValor: R$ ${valor}`;
+      document.getElementById("pix-code").innerText = pixCode;
+
+      // Gerar QR Code
+      document.getElementById("qrcode").innerHTML = "";
+      QRCode.toCanvas(document.createElement('canvas'), pixCode, function (err, canvas) {
+        if (!err) document.getElementById("qrcode").appendChild(canvas);
+      });
+    }
+  </script>
+
+</body>
+</html>
